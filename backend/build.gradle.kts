@@ -31,6 +31,8 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
+  // Source: https://mvnrepository.com/artifact/com.google.apis/google-api-services-youtube
+  implementation("com.google.apis:google-api-services-youtube:v3-rev222-1.25.0")
   compileOnly("org.projectlombok:lombok")
   developmentOnly("org.springframework.boot:spring-boot-devtools")
   runtimeOnly("com.h2database:h2")

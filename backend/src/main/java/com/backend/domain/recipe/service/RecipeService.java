@@ -1,8 +1,6 @@
 package com.backend.domain.recipe.service;
 
-import com.backend.domain.recipe.dto.RecipeListResponse;
-import com.backend.domain.recipe.dto.RecipeRequest;
-import com.backend.domain.recipe.dto.RecipeResponse;
+import com.backend.domain.recipe.dto.*;
 import com.backend.domain.recipe.entity.Recipe;
 import com.backend.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +30,7 @@ public class RecipeService {
 
   private final GoogleGenAiChatModel chatModel;
   private final RecipeRepository recipeRepository;
+  private final YoutubeService youtubeService;
 
   // System Prompt: 셰프 페르소나 설정
   private static final String SYSTEM_PROMPT = """
@@ -163,5 +162,29 @@ public class RecipeService {
    */
   public List<Recipe> getAllRecipes() {
     return recipeRepository.findAll();
+  }
+
+  /**
+   * 이미지 기반 레시피 추천 + 유튜브 영상 연동
+   *
+   * @param image   식재료 이미지
+   * @param request 추가 요청사항
+   * @return 추천 레시피 및 관련 유튜브 영상 목록
+   */
+  public RecipeListWithYoutubeResponse recommendRecipesWithYoutube(MultipartFile image, RecipeRequest request) {
+    // 1. AI 레시피 추천
+    RecipeListResponse recipeListResponse = recommendRecipes(image, request);
+
+    // 2. 각 레시피별로 유튜브 영상 검색
+    List<RecipeWithYoutubeResponse> recipesWithYoutube = recipeListResponse.recipes().stream()
+        .map(recipe -> {
+          List<YoutubeVideoResponse> youtubeVideos = youtubeService.searchRecipeVideos(
+              recipe.recipeName(), 3);
+          log.info("레시피 '{}' 관련 유튜브 영상 {}개 검색 완료", recipe.recipeName(), youtubeVideos.size());
+          return new RecipeWithYoutubeResponse(recipe, youtubeVideos);
+        })
+        .toList();
+
+    return new RecipeListWithYoutubeResponse(recipesWithYoutube, recipeListResponse.message());
   }
 }
